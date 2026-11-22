@@ -1,0 +1,12 @@
+;;;; -*- Hen -*-
+
+(
+ (synopsis "Exact cover problems solved by a purely functional Algorithm X.")
+ (license "LGPL-3")
+ (category math)
+ (author "Ivan Raikov")
+ (dependencies srfi-1 srfi-69 datatype matchable yasos)
+ (test-dependencies test)
+ (components (extension exact-cover
+                        (csc-options "-O3" "-d0")))
+)

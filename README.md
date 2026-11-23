@@ -1,10 +1,9 @@
 # exact-cover
 
-Exact cover problems for CHICKEN 6, solved by a purely functional
-version of Knuth's Algorithm X.
+CHICKEN Scheme solver for exact cover problems based on Knuth's Algorithm X.
 
-An exact cover problem has a set of items and a list of options, each
-option a set of items. A solution is a choice of options such that every
+An exact cover problem has a set of items and a list of options, where each
+option is a set of items. A solution is a choice of options such that every
 primary item lies in exactly one chosen option and every secondary item
 in at most one. Sudoku, the n queens problem, polyomino tilings and
 Latin squares all take this form.
@@ -20,10 +19,12 @@ none ends the branch.
 Instead of the dancing-links data structure, which unlinks and relinks
 options in place, the search works on immutable states, following the
 design of the Haskell [set-cover](https://hackage.haskell.org/package/set-cover)
-library by Henning Thielemann. A state holds the set of available
-options, the set of uncovered primary items, the number of available
-options containing each item, and the labels of the chosen options.
-Choosing an option returns a new state and leaves the old one intact, so:
+library by Henning Thielemann.
+
+A state holds the set of available options, the set of uncovered
+primary items, the number of available options containing each item,
+and the labels of the chosen options.  Choosing an option returns a
+new state and leaves the old one intact, so:
 
 - nothing is undone on backtracking;
 - a state can be searched more than once, or explored one step at a time;

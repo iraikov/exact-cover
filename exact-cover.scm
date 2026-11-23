@@ -1,44 +1,27 @@
 ;;;; exact-cover.scm - exact cover problems by a purely functional Algorithm X
 ;;;
-;;; An exact cover problem has a set of items and a list of options,
-;;; each option a set of items.  A solution is a choice of options such
-;;; that every primary item lies in exactly one chosen option and every
-;;; secondary item in at most one.  Many puzzles take this form: in
-;;; Sudoku the items are the cells and the (row, digit), (column, digit)
-;;; and (box, digit) pairs, and the options are the placements of a digit
-;;; in a cell; in the n queens problem the items are the rows and
-;;; columns (primary) and the diagonals (secondary).
+;;; Solves exact cover problems: given items 0 .. n-1 and a list of
+;;; options (sets of items), find every choice of options that covers
+;;; each primary item exactly once and each secondary item at most once.
+;;; Sudoku and the n queens problem are common examples.
 ;;;
-;;; The search is Knuth's Algorithm X: pick an uncovered primary item,
-;;; branch on each option that contains it, and in each branch remove
-;;; the options that share an item with the chosen one.  The item picked
-;;; is one contained in the fewest remaining options, so that an item
-;;; with a single option is covered at once and an item with none ends
-;;; the branch.
+;;; The search is based on Knuth's Algorithm X.  It picks the
+;;; uncovered primary item with the fewest remaining options, branches
+;;; on each of those options, and in each branch drops the options
+;;; that clash with the one chosen.
 ;;;
-;;; Unlike the dancing-links form of Algorithm X, which unlinks and
-;;; relinks options in place, this implementation is purely functional,
-;;; following the design of the Haskell set-cover library by Henning
-;;; Thielemann.  A search state holds the options still available (those
-;;; disjoint from every chosen option), the primary items not yet
-;;; covered, the number of available options containing each item, and
-;;; the labels of the chosen options.  Choosing an option makes a new
-;;; state and leaves the old one intact, so nothing has to be undone on
-;;; backtracking, a state can be searched more than once, and partial
-;;; assignments (such as the givens of a puzzle) are made by choosing
-;;; options before the search starts.
+;;; The design follows Henning Thielemann's Haskell set-cover library,
+;;; where search states are immutable values rather than dancing-links
+;;; structures.  Backtracking does not need undo, a state can be searched
+;;; more than once, and fixed choices (such as puzzle givens) are made
+;;; by choosing options before the search starts.  Sets of items and
+;;; options are bit sets, and each option keeps the precomputed set of
+;;; options it clashes with, so choosing an option costs one set
+;;; difference.
 ;;;
-;;; Sets of items and sets of options are bit sets: vectors of fixnum
-;;; words that are never changed once made.  Each option carries the set
-;;; of options that share an item with it, computed once per problem, so
-;;; that choosing an option takes one set difference, and only the
-;;; counts of the items of the removed options change.
-;;;
-;;; Items are the integers 0 .. n-1.  The search reports three counts:
-;;; the nodes (search states visited), the guesses (states entered
-;;; through a choice among two or more options) and the updates (options
-;;; removed from the available set), which together measure how hard a
-;;; problem was.
+;;; The search counts nodes visited, guesses (nodes with two or more
+;;; candidate options) and updates (options removed), as a measure of
+;;; how hard a problem was.
 
 (module exact-cover
   (
@@ -64,7 +47,6 @@
    (srfi 1)
    (srfi 69)
    datatype
-   matchable
    )
 
   ;;; ==================================================================
@@ -240,13 +222,12 @@
     (let* ((parsed
             (list->vector
              (map (lambda (option)
-                    (match option
-                      ((label item0 . items)
-                       (for-each (lambda (i) (check-item 'make-exact-cover i))
-                                 (cons item0 items))
-                       (cons label (list->vector (delete-duplicates (cons item0 items) =))))
-                      (_ (error 'make-exact-cover "an option is a label and one or more items"
-                                option))))
+                    (unless (and (list? option) (pair? option) (pair? (cdr option)))
+                      (error 'make-exact-cover "an option is a label and one or more items"
+                             option))
+                    (let ((items (cdr option)))
+                      (for-each (lambda (i) (check-item 'make-exact-cover i)) items)
+                      (cons (car option) (list->vector (delete-duplicates items =)))))
                   options)))
            (n-options (vector-length parsed))
            (top (fold (lambda (p m) (fold max m (vector->list (cdr p)))) -1

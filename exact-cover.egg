@@ -5,7 +5,7 @@
  (license "LGPL-3")
  (category math)
  (author "Ivan Raikov")
- (dependencies srfi-1 srfi-69 datatype matchable yasos)
+ (dependencies srfi-1 srfi-69 datatype yasos)
  (test-dependencies test)
  (components (extension exact-cover
                         (csc-options "-O3" "-d0")))
